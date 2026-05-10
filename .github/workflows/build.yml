@@ -21,6 +21,7 @@ jobs:
     # ubuntu-latest - загальний GitHub runner з preinstalled Docker і
     # актуальною Ubuntu. Для нашого випадку (build всередині
     # devcontainer-а) специфічний runner не потрібен.
+    name: devcontainer build
     runs-on: ubuntu-latest
 
     steps:
