@@ -11,12 +11,13 @@
 
 const int EXPECTED_FIELD_COUNT = 7;
 const int MAX_LINE_LENGTH = 256;
+const double EPS = 0.00001;
 
-int split_line(char line[], char* fields[], int max_fields) {
-    int count = 0;
+bool split_line_into_fields(char line[], char* fields[], int& count, int max_fields) {
+    count = 0;
     char* cursor = line;
 
-    while (*cursor != '\0' && count < max_fields) {
+    while (*cursor != '\0') {
         while (*cursor == ' ' || *cursor == '\t' || *cursor == '\n' || *cursor == '\r') {
             *cursor = '\0';
             ++cursor;
@@ -24,6 +25,10 @@ int split_line(char line[], char* fields[], int max_fields) {
 
         if (*cursor == '\0') {
             break;
+        }
+
+        if (count >= max_fields) {
+            return false;
         }
 
         fields[count] = cursor;
@@ -35,49 +40,104 @@ int split_line(char line[], char* fields[], int max_fields) {
         }
     }
 
-    return count;
+    return count == max_fields;
 }
 
-long parse_long(const char* text) {
+bool parse_long(const char* text, long& value) {
     char* end = nullptr;
-    const long value = std::strtol(text, &end, 10);
+    value = std::strtol(text, &end, 10);
 
-    if (end == text) {
-        std::abort();
+    if (end == text || *end != '\0') {
+        std::cerr << "Error: Invalid numeric value\n";
+        return false;
     }
 
-    return value;
+    return true;
 }
 
-int parse_int(const char* text) {
-    return static_cast<int>(parse_long(text));
+bool parse_int(const char* text, int& value) {
+    long parsed_value = 0;
+
+    if(!parse_long(text, parsed_value)){
+        return false;
+    }
+    
+    value = static_cast<int>(parsed_value);
+
+    return true;
 }
 
-double parse_double(const char* text) {
+bool parse_double(const char* text, double& value) {
     char* end = nullptr;
-    const double value = std::strtod(text, &end);
+    value = std::strtod(text, &end);
 
-    if (end == text) {
-        std::abort();
+    if (end == text || *end != '\0') {
+        std::cerr << "Error: Invalid numeric value\n";
+        return false;
     }
 
-    return value;
+    return true;
 }
 
-Frame parse_frame(char line[]) {
+bool parse_frame(Frame& frame, char line[], int frame_count) {
     char* fields[EXPECTED_FIELD_COUNT] = {};
-    const int field_count = split_line(line, fields, EXPECTED_FIELD_COUNT);
-    (void)field_count;
+    int field_count;
+    const bool is_valid_split = split_line_into_fields(line, fields, field_count, EXPECTED_FIELD_COUNT);
+    
+    if (!is_valid_split) {
+        std::cerr << "Error: Invalid frame at line " << frame_count << ": expected " << EXPECTED_FIELD_COUNT << " fields\n";
+        return false;
+    }
 
-    Frame frame{};
-    frame.timestamp_ms = parse_long(fields[0]);
-    frame.seq = parse_int(fields[1]);
-    frame.voltage_v = parse_double(fields[2]);
-    frame.current_a = parse_double(fields[3]);
-    frame.temperature_c = parse_double(fields[4]);
-    frame.gps_fix = parse_int(fields[5]);
-    frame.satellites = parse_int(fields[6]);
-    return frame;
+    if(!parse_long(fields[0], frame.timestamp_ms)){
+        return false;
+    }
+
+    if(!parse_int(fields[1], frame.seq)){
+        return false;
+    }
+
+    if(!parse_double(fields[2], frame.voltage_v)){
+        return false;
+    }
+
+    if(!parse_double(fields[3], frame.current_a)){
+        return false;
+    }
+
+    if(!parse_double(fields[4], frame.temperature_c)){
+        return false;
+    }
+    
+    if(!parse_int(fields[5], frame.gps_fix)){
+        return false;
+    }
+
+    if(!parse_int(fields[6], frame.satellites)){
+        return false;
+    }
+
+    if (frame.voltage_v < 0 + EPS) {
+        std::cerr << "Error: Invalid voltage_v: " << frame.voltage_v << std::endl;
+        return false;
+    }
+
+    if (frame.temperature_c < -40.0 - EPS || frame.temperature_c > 120.0 + EPS) {
+        std::cerr << "Error: Invalid temperature_c: " << frame.temperature_c << std::endl;
+        return false;
+    }
+
+    if (frame.gps_fix != 0 && frame.gps_fix != 1) {
+        std::cerr << "Error: Invalid gps_fix: " << frame.gps_fix << std::endl;
+        return false;
+    }
+
+    if (frame.satellites < 0) {
+        std::cerr << "Error: Invalid satellites: " << frame.satellites << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
 double compute_frame_rate_hz(const Frame frames[], int frame_count) {
@@ -86,15 +146,17 @@ double compute_frame_rate_hz(const Frame frames[], int frame_count) {
     return static_cast<double>((frame_count - 1) * 1000 / elapsed_ms);
 }
 
-int read_frames(const char* path, Frame frames[], int max_frames) {
+bool read_frames(const char* path, int& frame_count, Frame frames[], int max_frames) {
     std::ifstream input{path};
+
     if (!input) {
         std::cerr << "error: failed to open input file: " << path << '\n';
-        return 0;
+        return false;
     }
 
-    int frame_count = 0;
+    frame_count = 0;
     char line[MAX_LINE_LENGTH];
+    bool is_valid_frame;
 
     while (input.getline(line, MAX_LINE_LENGTH)) {
         if (line[0] == '\0') {
@@ -102,12 +164,34 @@ int read_frames(const char* path, Frame frames[], int max_frames) {
         }
 
         if (frame_count < max_frames) {
-            frames[frame_count] = parse_frame(line);
+            is_valid_frame = parse_frame(frames[frame_count], line, frame_count);
+
+            if (!is_valid_frame) {
+                return false;
+            }
+
+            if(frame_count > 0){
+                if(frames[frame_count].timestamp_ms <= frames[frame_count - 1].timestamp_ms){
+                    std::cerr << "Error: Invalid timestamp_ms: must be strictly increasing" << std::endl;
+                    return false;
+                }
+                
+                if(frames[frame_count].seq - frames[frame_count - 1].seq != 1){
+                    std::cerr << "Error: Invalid seq: expected increment by 1 \n";
+                    return false;
+                }
+            }
+
             ++frame_count;
         }
     }
 
-    return frame_count;
+    if(frame_count < 1){
+        std::cerr << "Error: empty file\n";
+        return false;
+    }
+
+    return true;
 }
 
 Summary summarize(const Frame frames[], int frame_count) {

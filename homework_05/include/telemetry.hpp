@@ -26,7 +26,7 @@ struct Summary {
 };
 
 // Reads frames from a whitespace-separated telemetry log.
-int read_frames(const char* path, Frame frames[], int max_frames);
+bool read_frames(const char* path, int& frame_count, Frame frames[], int max_frames);
 
 // Calculates summary values for already parsed frames.
 Summary summarize(const Frame frames[], int frame_count);
