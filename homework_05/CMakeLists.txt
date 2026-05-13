@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-# Окремий CMake-проєкт для домашньої роботи 04. Його можна збирати як
+# Окремий CMake-проєкт для домашньої роботи 05. Його можна збирати як
 # через root CMakeLists.txt, так і напряму з цієї директорії.
 project(telemetry_check CXX)
 
@@ -11,7 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(telemetry src/telemetry.cpp)
 target_include_directories(telemetry PUBLIC include)
-# Один executable для задачі з UGV odometry.
+# Один executable для задачі з telemetry_check.
 add_executable(telemetry_check src/main.cpp)
 target_link_libraries(telemetry_check PRIVATE telemetry)
 
