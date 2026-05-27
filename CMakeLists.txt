@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+enable_testing()
+
 # clangd читає compile_commands.json і завдяки цьому бачить ті самі include
 # paths, defines і flags, що й реальна CMake-збірка.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
