@@ -5,15 +5,19 @@
 int main(int argc, char** argv)
 {
   std::cout << "Hello World!!!" << std::endl;
-  std::cout << "argc: " << argc << std::endl;
-  std::cout << "argv[0]: " << argv[0] << "\n\n";
 
-  std::string path = "homework_06/data/input.txt";
+  if (argc > 1) {
+     std::cout << "input file: " << argv[1] << "\n\n";
+  } else {
+    std::cerr << "Error: no input file provided\n";
+    return 1;
+  }
+
   std::string output_path = "homework_06/data/output.txt";
 
   double fire_x, fire_y, maneuver_x, maneuver_y;
   bool need_maneuver;
-  bool is_computed = calculate_fire_point(path.c_str(), fire_x, fire_y, need_maneuver, maneuver_x, maneuver_y);
+  bool is_computed = calculate_fire_point(argv[1], fire_x, fire_y, need_maneuver, maneuver_x, maneuver_y);
 
   if (!is_computed) {
     return 1;
