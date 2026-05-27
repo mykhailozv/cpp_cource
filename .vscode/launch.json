@@ -76,6 +76,30 @@
         }
       ]
     },
+    {
+      // Локальний debug стартера ДЗ 6. preLaunchTask збирає debug preset.
+      "name": "Debug homework_06: ballistics_cli",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug/homework_06/ballistics_cli",
+      "args": [
+        "${workspaceFolder}/homework_06/data/input.txt"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "CMake: configure and build",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
 
     {
       // Локальний debug тестів homework_06.
