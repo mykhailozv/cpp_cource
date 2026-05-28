@@ -11,7 +11,7 @@ TEST(Ballistics, СomputeHorizontalRange)
   double drag = 0.07;
   double lift = 0.0;
   double mass = 0.35;
-  double horizontal_ammo_range;
+  double horizontal_ammo_range = 0.0;
   const double expected_horizontal_ammo_range = 37.11022211502511;
   const bool expected_is_computed = true;
   bool is_computed = compute_horizontal_range(attack_speed, height, drag, lift, mass, horizontal_ammo_range);
@@ -25,8 +25,13 @@ TEST(Ballistics, ComputeAll)
 {
   std::string path = std::string(TEST_SOURCE_DIR) + "/data/input.txt";
 
-  double fire_x, fire_y, maneuver_x, maneuver_y;
-  bool need_maneuver;
+  double fire_x = 0.0;
+  double fire_y = 0.0;
+  double maneuver_x = 0.0;
+  double maneuver_y = 0.0;
+
+  bool need_maneuver = false;
+
   bool is_computed = calculate_fire_point(path.c_str(), fire_x, fire_y, need_maneuver, maneuver_x, maneuver_y);
 
   const double expected_fire_x = 195.088;
@@ -44,40 +49,63 @@ TEST(Ballistics, ComputeAll)
 
 TEST(Ballistics, UnknownAmmo)
 {
-  double drag, lift, mass;
+  double drag = 0.0;
+  double lift = 0.0;
+  double mass = 0.0;
 
   EXPECT_FALSE(get_ammo_parameters("INVALID", drag, lift, mass));
 }
 
 TEST(Ballistics, InvalidInputFileReturnsFalse)
 {
-  double xd, yd, zd, target_x, target_y, attack_speed, acceleration_path;
+  double drone_x = 0.0;
+  double drone_y = 0.0;
+  double height_z = 0.0;
+  double target_x = 0.0;
+  double target_y = 0.0;
+  double attack_speed = 0.0;
+  double acceleration_path = 0.0;
   std::string ammo_name;
+
   std::string path = std::string(TEST_SOURCE_DIR) + "/data/broken_input.txt";
 
-  EXPECT_FALSE(read_input_file(path.c_str(), xd, yd, zd, target_x, target_y, attack_speed, acceleration_path, ammo_name));
+  EXPECT_FALSE(read_input_file(path.c_str(), drone_x, drone_y, height_z, target_x, target_y, attack_speed, acceleration_path, ammo_name));
 }
 
 TEST(Ballistics, MissingInputFileReturnsFalse)
 {
-  double xd, yd, zd, target_x, target_y, attack_speed, acceleration_path;
+  double drone_x = 0.0;
+  double drone_y = 0.0;
+  double height_z = 0.0;
+  double target_x = 0.0;
+  double target_y = 0.0;
+  double attack_speed = 0.0;
+  double acceleration_path = 0.0;
   std::string ammo_name;
 
-  EXPECT_FALSE(read_input_file("some_thing", xd, yd, zd, target_x, target_y, attack_speed, acceleration_path, ammo_name));
+  EXPECT_FALSE(read_input_file("some_thing", drone_x, drone_y, height_z, target_x, target_y, attack_speed, acceleration_path, ammo_name));
 }
 
 TEST(Ballistics, ValidAmmoReturnsTrue)
 {
-  double drag, lift, mass;
+  double drag = 0.0;
+  double lift = 0.0;
+  double mass = 0.0;
 
   EXPECT_TRUE(get_ammo_parameters("VOG-17", drag, lift, mass));
 }
 
 TEST(Ballistics, ValidInputFileReturnsTrue)
 {
-  double xd, yd, zd, target_x, target_y, attack_speed, acceleration_path;
+  double drone_x = 0.0;
+  double drone_y = 0.0;
+  double height_z = 0.0;
+  double target_x = 0.0;
+  double target_y = 0.0;
+  double attack_speed = 0.0;
+  double acceleration_path = 0.0;
   std::string ammo_name;
   std::string path = std::string(TEST_SOURCE_DIR) + "/data/input.txt";
 
-  EXPECT_TRUE(read_input_file(path.c_str(), xd, yd, zd, target_x, target_y, attack_speed, acceleration_path, ammo_name));
+  EXPECT_TRUE(read_input_file(path.c_str(), drone_x, drone_y, height_z, target_x, target_y, attack_speed, acceleration_path, ammo_name));
 }
