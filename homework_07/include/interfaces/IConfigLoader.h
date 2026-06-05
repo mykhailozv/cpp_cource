@@ -1,7 +1,7 @@
 #pragma once
 
-class DroneConfig;
-class AmmoParams;
+struct DroneConfig;
+struct AmmoParams;
 
 class IConfigLoader {
 public:
@@ -9,7 +9,7 @@ public:
 
     virtual bool load() = 0;
 
-    virtual const DroneConfig& getConfig() const = 0;
+    virtual const DroneConfig* getConfig() const = 0;
 
-    virtual const AmmoParams& getAmmoParams() const = 0;
+    virtual const AmmoParams* getAmmoParams() const = 0;
 };

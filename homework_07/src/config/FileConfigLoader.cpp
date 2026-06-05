@@ -5,34 +5,44 @@
 
 #include "config/FileConfigLoader.h"
 #include "Types.h"
+#include "utils/Logging.h"
+#include "utils/MathUtils.h"
 
 using json = nlohmann::json;
 
-FileConfigLoader::FileConfigLoader(const std::string& path)
-    :ammoPath(path)
+constexpr double EPS = 0.001;
+
+FileConfigLoader::FileConfigLoader(const std::string& ammoPath, const std::string& configPath)
+    :ammoPath(ammoPath), configPath(configPath)
 {
     // TODO: implement
 }
 
 bool FileConfigLoader::load()
 {
-    // TODO: implement
+    if (readAmmoInfo() && readConfig()) {
+        if (setAmmoName(droneConfig->ammoName)) {
+            return true;
+        }
+    }
+    
     return false;
 }
 
-const DroneConfig& FileConfigLoader::getConfig() const
+const DroneConfig* FileConfigLoader::getConfig() const
 {
-    // TODO: implement
-    return *droneConfig;
+    return droneConfig;
 }
 
-const AmmoParams& FileConfigLoader::getAmmoParams() const
+const AmmoParams* FileConfigLoader::getAmmoParams() const
 {
     if (size > 0 && index >= 0 && index < size) {
-        return ammoParamsList[index];
+        return &ammoParamsList[index];
     }
+
+    std::cerr << "ammoParamsList is not initialized\n";
     static AmmoParams dummy{};
-    return dummy;
+    return &dummy;
 }
 
 FileConfigLoader::~FileConfigLoader()
@@ -78,7 +88,7 @@ bool FileConfigLoader::readAmmoInfo(){
 }
 
 bool FileConfigLoader::readConfig(){
-    std::ifstream readData("config.json");
+    std::ifstream readData(configPath);
 
     if (!readData.is_open())
     {
@@ -102,6 +112,29 @@ bool FileConfigLoader::readConfig(){
     droneConfig->startPos.x = data["drone"]["position"]["x"];
     droneConfig->startPos.y = data["drone"]["position"]["y"];
     droneConfig->turnThreshold = data["drone"]["turnThreshold"];
+
+    droneConfig->acceleration = MathUtils::calculateAcceleration(droneConfig->accelPath, droneConfig->attackSpeed);
     
     return true;
+}
+
+bool FileConfigLoader::setAmmoName(const std::string& ammoName){
+    
+    if (ammoParamsList == nullptr) {
+        std::cerr << "ammoParamsList is not initialized\n";
+        return false;
+    }
+
+    for (int i = 0; i < size; i++)
+    {
+        if (ammoName == ammoParamsList[i].name)
+        {
+            index = i;
+            return true;
+        }
+        
+    }
+
+    std::cerr << "Unknown ammoName: " << ammoName;
+    return false;
 }
