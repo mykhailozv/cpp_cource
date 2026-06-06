@@ -109,3 +109,25 @@ TEST(Ballistics, ValidInputFileReturnsTrue)
 
   EXPECT_TRUE(read_input_file(path.c_str(), drone_x, drone_y, height_z, target_x, target_y, attack_speed, acceleration_path, ammo_name));
 }
+
+TEST(Ballistics, ReferenceScenario)
+{
+  std::string path = std::string(TEST_SOURCE_DIR) + "/data/reference_input.txt";
+
+  double fire_x = 0.0;
+  double fire_y = 0.0;
+  double maneuver_x = 0.0;
+  double maneuver_y = 0.0;
+
+  bool need_maneuver = false;
+
+  bool is_computed = calculate_fire_point(path.c_str(), fire_x, fire_y, need_maneuver, maneuver_x, maneuver_y);
+
+  const double expected_fire_x = 173.759;
+  const double expected_fire_y = 173.759;
+
+  EXPECT_TRUE(is_computed);
+  EXPECT_NEAR(fire_x, expected_fire_x, EPS);
+  EXPECT_NEAR(fire_y, expected_fire_y, EPS);
+  EXPECT_FALSE(need_maneuver);
+}
