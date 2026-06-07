@@ -40,7 +40,7 @@ const AmmoParams* FileConfigLoader::getAmmoParams() const
         return &ammoParamsList[index];
     }
 
-    std::cerr << "ammoParamsList is not initialized\n";
+    ERROR("ammoParamsList is not initialized");
     static AmmoParams dummy{};
     return &dummy;
 }
@@ -60,11 +60,19 @@ bool FileConfigLoader::readAmmoInfo(){
 
     if (!readData.is_open())
     {
-        std::cerr << "Failed to open " << ammoPath << " file\n";
+        ERROR("Failed to open " << ammoPath << " file");
         return false;
     }
-    
-    json data = json::parse(readData);
+
+    json data;
+
+    try {
+        data = json::parse(readData);
+    } catch (const json::parse_error& e) {
+        ERROR("JSON parse error: " << e.what());
+        return false;
+    }
+
     int dataSize = data.size();
 
     if (dataSize <= 0)
@@ -76,9 +84,14 @@ bool FileConfigLoader::readAmmoInfo(){
     
     ammoParamsList = new AmmoParams[dataSize];
 
-    for (int i = 0; i < dataSize; i++)
-    {
-        ammoParamsList[i] = data[i];
+    
+    try {
+        for (int i = 0; i < dataSize; i++) {
+            ammoParamsList[i] = data[i];
+        }
+    } catch (const json::exception& e) {
+        ERROR("Ammo parsing error: " << e.what());
+        return false;
     }
 
     size = dataSize;
@@ -92,26 +105,116 @@ bool FileConfigLoader::readConfig(){
 
     if (!readData.is_open())
     {
-        std::cerr << "Failed to open config.json file\n";
+        ERROR("Failed to open config.json file");
         return false;
     }
     
-    json data = json::parse(readData);
-
     delete droneConfig;
     droneConfig = new DroneConfig();
-    droneConfig->accelPath = data["drone"]["accelerationPath"];
-    droneConfig->altitude = data["drone"]["altitude"];
+
+    json data;
+
+    try {
+        data = json::parse(readData);
+    } catch (const json::parse_error& e) {
+        ERROR("JSON parse error: " << e.what());
+        return false;
+    }
+
+    if (!data.contains("drone")){
+        ERROR("Missing key: drone");
+        return false;
+    }
+
+    const auto& drone = data["drone"];
+
+    if (!drone.contains("position")) {
+        ERROR("Missing key: drone.position");
+        return false;
+    }
+
+    const auto& pos = drone["position"];
+
+    if (!pos.contains("x")) {
+        ERROR("Missing key: drone.position.x");
+        return false;
+    }
+
+    if (!pos.contains("y")) {
+        ERROR("Missing key: drone.position.y");
+        return false;
+    }
+
+    if (!drone.contains("accelerationPath")) {
+        ERROR("Missing key: drone.accelerationPath");
+        return false;
+    }
+
+    if (!drone.contains("altitude")) {
+        ERROR("Missing key: drone.altitude");
+        return false;
+    }
+
+    if (!drone.contains("angularSpeed")) {
+        ERROR("Missing key: drone.angularSpeed");
+        return false;
+    }
+
+    if (!drone.contains("attackSpeed")) {
+        ERROR("Missing key: drone.attackSpeed");
+        return false;
+    }
+
+    if (!drone.contains("initialDirection")) {
+        ERROR("Missing key: drone.initialDirection");
+        return false;
+    }
+
+    if (!drone.contains("turnThreshold")) {
+        ERROR("Missing key: drone.turnThreshold");
+        return false;
+    }
+
+    if (!data.contains("ammo")) {
+        ERROR("Missing key: ammo");
+        return false;
+    }
+
+    if (!data.contains("targetArrayTimeStep")) {
+        ERROR("Missing key: targetArrayTimeStep");
+        return false;
+    }
+
+    if (!data.contains("simulation")) {
+        ERROR("Missing key: simulation");
+        return false;
+    }
+
+    const auto& sim = data["simulation"];
+
+    if (!sim.contains("hitRadius")) {
+        ERROR("Missing key: simulation.hitRadius");
+        return false;
+    }
+
+    if (!sim.contains("timeStep")) {
+        ERROR("Missing key: simulation.timeStep");
+        return false;
+    }
+
+
+    droneConfig->accelPath = drone["accelerationPath"];
+    droneConfig->altitude = drone["altitude"];
     droneConfig->ammoName = data["ammo"];
-    droneConfig->angularSpeed = data["drone"]["angularSpeed"];
+    droneConfig->angularSpeed = drone["angularSpeed"];
     droneConfig->arrayTimeStep = data["targetArrayTimeStep"];
-    droneConfig->attackSpeed = data["drone"]["attackSpeed"];
-    droneConfig->hitRadius = data["simulation"]["hitRadius"];
-    droneConfig->initialDir = data["drone"]["initialDirection"];
-    droneConfig->simTimeStep = data["simulation"]["timeStep"];
-    droneConfig->startPos.x = data["drone"]["position"]["x"];
-    droneConfig->startPos.y = data["drone"]["position"]["y"];
-    droneConfig->turnThreshold = data["drone"]["turnThreshold"];
+    droneConfig->attackSpeed = drone["attackSpeed"];
+    droneConfig->hitRadius = sim["hitRadius"];
+    droneConfig->initialDir = drone["initialDirection"];
+    droneConfig->simTimeStep = sim["timeStep"];
+    droneConfig->startPos.x = pos["x"];
+    droneConfig->startPos.y = pos["y"];
+    droneConfig->turnThreshold = drone["turnThreshold"];
 
     droneConfig->acceleration = MathUtils::calculateAcceleration(droneConfig->accelPath, droneConfig->attackSpeed);
     
@@ -121,7 +224,7 @@ bool FileConfigLoader::readConfig(){
 bool FileConfigLoader::setAmmoName(const std::string& ammoName){
     
     if (ammoParamsList == nullptr) {
-        std::cerr << "ammoParamsList is not initialized\n";
+        ERROR("ammoParamsList is not initialized");
         return false;
     }
 
@@ -135,6 +238,7 @@ bool FileConfigLoader::setAmmoName(const std::string& ammoName){
         
     }
 
-    std::cerr << "Unknown ammoName: " << ammoName;
+    ERROR("Unknown ammoName: " << ammoName);
+    
     return false;
 }

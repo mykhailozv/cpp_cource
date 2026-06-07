@@ -17,7 +17,7 @@ public:
         IResultExporter* exporter
     );
 
-    void init(const IConfigLoader* config);
+    bool init(const IConfigLoader* config);
     bool hasNext() const;
     Coord step();
     bool reset();

@@ -4,11 +4,12 @@
 #include "third_party/nlohmann/json.hpp"
 #include "providers/JsonTargetProvider.h"
 #include "Types.h"
+#include "utils/Logging.h"
 
 using json = nlohmann::json;
 
-JsonTargetProvider::JsonTargetProvider(const std::string& path){
-    readTargetsCoord(path);
+JsonTargetProvider::JsonTargetProvider(const std::string& path)
+: path(path) {
 }
 
 int JsonTargetProvider::getTargetCount() const
@@ -26,33 +27,60 @@ Target* JsonTargetProvider::getTarget(int idx)
     return &dummy;
 }
 
+bool JsonTargetProvider::init(){
+    return readTargetsCoord(path);
+}
+
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Coord, x, y)
 bool JsonTargetProvider::readTargetsCoord(const std::string& path){
     std::ifstream readData(path);
 
     if (!readData.is_open())
     {
-        std::cerr << "Failed to open targets.json file\n";
+        ERROR("Failed to open targets.json file");
         return false;
     }
 
-    json data = json::parse(readData);
+    json data;
+
+    try {
+        data = json::parse(readData);
+    } catch (const json::parse_error& e) {
+        ERROR("JSON parse error: " << e.what());
+        return false;
+    }
+
+    if (!data.contains("targetCount")){
+        ERROR("Missing key: targetCount");
+        return false;
+    }
 
     targetCount = data["targetCount"];
+
+    if (!data.contains("timeSteps")){
+        ERROR("Missing key: timeSteps");
+        return false;
+    }
+
     timeSteps = data["timeSteps"];
 
     targetList = new Target[targetCount];
 
-    for (int i = 0; i < targetCount; i++)
-    {
-        targetList[i].init(i, timeSteps);
+    try {
+        for (int i = 0; i < targetCount; i++) {
+            targetList[i].init(i, timeSteps);
 
-        for (int j = 0; j < timeSteps; j++)
-        {
-            targetList[i].targets[j] = data["targets"][i]["positions"][j];
+            for (int j = 0; j < timeSteps; j++)
+            {
+                targetList[i].targets[j] = data["targets"][i]["positions"][j];
+            }
+            
         }
-        
+    } catch (const json::exception& e) {
+        ERROR("Targets parsing error: " << e.what());
+        return false;
     }
+
     return true;
 }
 

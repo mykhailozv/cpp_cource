@@ -4,6 +4,7 @@
 #include "config/ComponentFactory.h"
 #include "Types.h"
 #include "interfaces/IResultExporter.h"
+#include "utils/Logging.h"
 
 //#include "SimpleSimulator.h"
 
@@ -26,6 +27,10 @@ int main(int argc, char** argv)
     IConfigLoader* config = createLoader(LoaderType::FILE, path);
     IResultExporter* exporter = createExporter(ExporterType::JSON, path);
     
+    if (!targetProvider->init()) {
+        return 1;
+    }
+
     if(!config->load()){
         return 1;
     }
@@ -33,7 +38,9 @@ int main(int argc, char** argv)
     MissionProcessor* processor;
 
     processor = new MissionProcessor(solver, targetProvider, exporter);
-    processor->init(config);
+    if (!processor->init(config)) {
+        return 1;
+    }
 
     while (processor->hasNext()) {
         Coord drop = processor->step();
@@ -44,6 +51,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    LOG("Complete Simulation");
+    
     delete processor;
     delete exporter;
     delete solver;

@@ -24,7 +24,7 @@ MissionProcessor::MissionProcessor(
 {
 }
 
-void MissionProcessor::init(const IConfigLoader* config)
+bool MissionProcessor::init(const IConfigLoader* config)
 {
     configLoader = config;
     droneConfig = config->getConfig();
@@ -35,6 +35,8 @@ void MissionProcessor::init(const IConfigLoader* config)
     simStep = &steps[0];
     initSimStep();
     inProgress = true;
+    
+    return calculateHorizontalAmmoRange() > MathUtils::EPS;
 }
 
 bool MissionProcessor::hasNext() const
