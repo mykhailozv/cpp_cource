@@ -9,8 +9,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 add_library(mission_core
+    src/geometry/Coord.cpp
+    src/simulation/StepTimer.cpp
+    src/simulation/SimStep.cpp
+    src/simulation/Target.cpp
     src/exporters/JsonSimulationExporter.cpp
-    src/Types.cpp
     src/MissionProcessor.cpp
     src/utils/MathUtils.cpp
     src/solvers/AnalyticalSolver.cpp

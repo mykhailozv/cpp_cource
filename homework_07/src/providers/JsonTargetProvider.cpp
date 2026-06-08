@@ -2,8 +2,8 @@
 #include <iostream>
 
 #include "third_party/nlohmann/json.hpp"
+#include "simulation/Target.h"
 #include "providers/JsonTargetProvider.h"
-#include "Types.h"
 #include "utils/Logging.h"
 
 using json = nlohmann::json;

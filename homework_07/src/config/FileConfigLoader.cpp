@@ -3,8 +3,9 @@
 
 #include "third_party/nlohmann/json.hpp"
 
+#include "config/AmmoParams.h"
+#include "config/DroneConfig.h"
 #include "config/FileConfigLoader.h"
-#include "Types.h"
 #include "utils/Logging.h"
 #include "utils/MathUtils.h"
 

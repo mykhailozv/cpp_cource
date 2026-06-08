@@ -1,8 +1,8 @@
 #include <iostream>
 
+#include "geometry/Coord.h"
 #include "MissionProcessor.h"
 #include "config/ComponentFactory.h"
-#include "Types.h"
 #include "interfaces/IResultExporter.h"
 #include "utils/Logging.h"
 

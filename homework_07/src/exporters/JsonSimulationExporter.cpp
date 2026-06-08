@@ -2,9 +2,9 @@
 #include <fstream>
 
 #include "exporters/JsonSimulationExporter.h"
-#include "Types.h"
 #include "utils/Logging.h"
 #include "third_party/nlohmann/json.hpp"
+#include "simulation/SimStep.h"
 
 using json = nlohmann::json;
 

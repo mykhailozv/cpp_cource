@@ -1,8 +1,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "geometry/Coord.h"
 #include "solvers/AnalyticalSolver.h"
-#include "Types.h"
 #include "utils/Logging.h"
 #include "utils/MathUtils.h"
 
