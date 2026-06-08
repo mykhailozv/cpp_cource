@@ -66,19 +66,16 @@ double Coord::direction() const{
 }
 
 void Target::removeData(){
-    delete[] targets;
-    targets = nullptr;
 }
 
 void Target::init(int targetId, int count){
     this->targetId = targetId;
     timeSteps = count;
 
-    delete[] targets;
-    targets = new Coord[count];
+    targets.resize(count);
 }
 
-Target::~Target(){removeData();}
+Target::~Target(){}
 
 
 void StepTimer::init(const DroneConfig& droneConfig, int timeSteps){

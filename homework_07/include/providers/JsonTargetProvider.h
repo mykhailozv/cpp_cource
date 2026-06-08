@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <vector>
+
 #include "interfaces/ITargetProvider.h"
 
 struct Target;
@@ -18,7 +20,7 @@ public:
 private:
     int targetCount;
     int timeSteps;
-    Target* targetList;
+    std::vector<Target> targetList;
     std::string path;
     bool readTargetsCoord(const std::string& path);
 

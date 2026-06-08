@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "Types.h"
 #include "interfaces/IBallisticSolver.h"
 #include "interfaces/ITargetProvider.h"
@@ -37,7 +39,7 @@ private:
     int currentIndex;
 
     StepTimer stepTimer;
-    SimStep* steps;
+    std::vector<SimStep> steps;
     SimStep* simStep;
     bool inProgress;
 

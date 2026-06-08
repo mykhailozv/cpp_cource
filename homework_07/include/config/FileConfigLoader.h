@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "interfaces/IConfigLoader.h"
 
@@ -24,10 +26,9 @@ private:
 
     DroneConfig* droneConfig;
 
-    AmmoParams* ammoParamsList = nullptr;
+    std::unordered_map<std::string, AmmoParams> ammoParamsMap;
     std::string ammoPath;
     std::string configPath;
-    int size = 0;
-    int index = -1;
-
+    std::unordered_map<std::string, AmmoParams>::const_iterator cachedAmmo;
+    bool cacheValid = false;
 };

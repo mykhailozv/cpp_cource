@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 
 enum DronePhase {
@@ -51,7 +52,7 @@ struct DroneConfig {
 struct Target{
 	int targetId;
 	int timeSteps;
-	Coord* targets = nullptr;
+	std::vector<Coord> targets;
 
 	//Target(const Target&) = delete;
     Target& operator=(const Target&) = delete;

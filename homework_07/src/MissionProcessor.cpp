@@ -31,8 +31,8 @@ bool MissionProcessor::init(const IConfigLoader* config)
     ammoParams = config->getAmmoParams();
     
     stepTimer.init(*droneConfig, targets->getSimCycleStep());
-    steps = new SimStep[MAX_STEPS];
-    simStep = &steps[0];
+    steps.resize(MAX_STEPS);
+    simStep = steps.data();
     initSimStep();
     inProgress = true;
     
@@ -483,9 +483,8 @@ void MissionProcessor::initSimStep(){
 }
 
 MissionProcessor::~MissionProcessor(){
-    delete [] steps;
 }
 
 bool MissionProcessor::saveData(){
-    return exporter->save(steps, stepTimer.stepIndex);
+    return exporter->save(steps.data(), stepTimer.stepIndex);
 }
