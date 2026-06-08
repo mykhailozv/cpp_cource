@@ -8,21 +8,17 @@
 
 Coord AnalyticalSolver::solve(
     const Coord& dronePos,
-    const Coord& targetPos,
     double altitude,
-    double ammoSpeed,
+    double attackSpeed,
     double drag,
-    double lift
-)
-{
-    // TODO: implement analytical solution
-    (void)dronePos;
-    (void)targetPos;
-    (void)altitude;
-    (void)ammoSpeed;
-    (void)drag;
-    (void)lift;
-    return Coord{0.0, 0.0};
+    double lift,
+    double mass,
+    double direction
+) {
+    double horizontalAmmoRange = calculateHorizontalAmmoRange(attackSpeed, altitude, drag, lift, mass);
+    Coord directionVector = {std::cos(direction), std::sin(direction)};
+
+    return dronePos + (directionVector * horizontalAmmoRange);
 }
 
 double AnalyticalSolver::calculateAmmoFlightTime(
