@@ -8,12 +8,12 @@ public:
 
     virtual Coord solve(
         const Coord& dronePos,
+        const Coord& targetPos,
         double altitude,
         double attackSpeed,
         double drag,
         double lift,
-        double mass,
-        double direction
+        double mass
     ) = 0;
 
     virtual double calculateAmmoFlightTime(

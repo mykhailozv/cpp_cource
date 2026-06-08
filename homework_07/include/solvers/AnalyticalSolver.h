@@ -6,12 +6,12 @@ class AnalyticalSolver : public IBallisticSolver {
 public:
     Coord solve(
         const Coord& dronePos,
+        const Coord& targetPos,
         double altitude,
         double attackSpeed,
         double drag,
         double lift,
-        double mass,
-        double direction
+        double mass
     ) override;
 
     double calculateAmmoFlightTime(
