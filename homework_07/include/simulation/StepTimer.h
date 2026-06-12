@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config/DroneConfig.h"
+struct DroneConfig;
 
 struct StepTimer{
     int stepIndex{0}; // steps - загальний крок симуляції

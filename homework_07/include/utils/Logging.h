@@ -1,3 +1,5 @@
+#include <iostream>
+
 #define ENABLE_LOG	1
 #define ENABLE_DEBUG  0
 #define ENABLE_ERROR 1

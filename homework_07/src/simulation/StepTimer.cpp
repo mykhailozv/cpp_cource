@@ -1,6 +1,6 @@
 #include <cmath>
-#include <iostream>
 
+#include "config/DroneConfig.h"
 #include "simulation/StepTimer.h"
 #include "utils/Logging.h"
 

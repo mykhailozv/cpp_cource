@@ -1,9 +1,9 @@
 #include "config/ComponentFactory.h"
-#include "interfaces/IResultExporter.h"
 #include "solvers/AnalyticalSolver.h"
 #include "providers/JsonTargetProvider.h"
 #include "config/FileConfigLoader.h"
 #include "exporters/JsonSimulationExporter.h"
+#include "utils/Logging.h"
 
 IBallisticSolver* createSolver(SolverType type)
 {
@@ -11,6 +11,9 @@ IBallisticSolver* createSolver(SolverType type)
     case SolverType::ANALYTICAL:
         return new AnalyticalSolver();
     }
+
+    ERROR("createSolver: unsupported SolverType = " << static_cast<int>(type));
+
     return nullptr;
 }
 
@@ -20,7 +23,9 @@ ITargetProvider* createProvider(ProviderType type, const std::string& path)
         case ProviderType::JSON:
             return new JsonTargetProvider(path + "targets.json");
     }
-    
+
+    ERROR("createProvider: unsupported ProviderType = " << static_cast<int>(type));
+
     return nullptr;
 }
 
@@ -31,6 +36,8 @@ IConfigLoader* createLoader(LoaderType type, const std::string& path)
             return new FileConfigLoader(path + "ammo.json", path + "config.json");
     }
 
+    ERROR("createLoader: unsupported LoaderType = " << static_cast<int>(type));
+
     return nullptr;
 }
 
@@ -40,6 +47,8 @@ IResultExporter* createExporter(ExporterType type, const std::string& path)
         case ExporterType::JSON:
             return new JsonSimulationExporter(path + "simulation.json");
     }
+
+    ERROR("createExporter: unsupported ExporterType = " << static_cast<int>(type));
 
     return nullptr;
 }

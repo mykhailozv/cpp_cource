@@ -4,9 +4,14 @@
 #include "utils/MathUtils.h"
 #include <cmath>
 #include <cstdio>
-#include <limits>
 #include "third_party/nlohmann/json.hpp"
-#include <iostream>
+#include "interfaces/IBallisticSolver.h"
+#include "interfaces/ITargetProvider.h"
+#include "interfaces/IConfigLoader.h"
+#include "interfaces/IResultExporter.h"
+#include "config/DroneConfig.h"
+#include "config/AmmoParams.h"
+
 
 using json = nlohmann::json;
 

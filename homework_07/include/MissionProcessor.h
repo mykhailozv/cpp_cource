@@ -2,17 +2,17 @@
 
 #include <vector>
 
-#include "interfaces/IBallisticSolver.h"
-#include "interfaces/ITargetProvider.h"
-#include "interfaces/IConfigLoader.h"
-#include "interfaces/IResultExporter.h"
 #include "simulation/DronePhase.h"
 #include "simulation/SimStep.h"
 #include "simulation/StepTimer.h"
-#include "config/AmmoParams.h"
 
+struct AmmoParams;
 struct Coord;
 struct DroneConfig;
+class IBallisticSolver;
+class IConfigLoader;
+class IResultExporter;
+class ITargetProvider;
 
 class MissionProcessor {
 public:
