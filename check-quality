@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo "=== Configure ==="
+cmake --preset debug
+
+echo
+echo "=== Build ==="
+cmake --build --preset debug
+
+echo
+echo "=== Check formatting ==="
+clang-format --dry-run --Werror \
+  --style=file:.devcontainer/.clang-format \
+  homework_06/src/*.cpp \
+  homework_06/include/*.hpp \
+  homework_06/tests/*.cpp
+
+echo
+echo "=== Run clang-tidy ==="
+clang-tidy \
+  -p build/debug \
+  -config-file=.devcontainer/.clang-tidy \
+  homework_06/src/*.cpp \
+  homework_06/tests/*.cpp
+
+echo
+echo "=== Run tests ==="
+./build/debug/homework_06/ballistics_tests
+
+echo
+echo "=== Quality check passed ==="
