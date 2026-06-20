@@ -3,13 +3,16 @@
 #include "providers/JsonTargetProvider.h"
 #include "config/FileConfigLoader.h"
 #include "exporters/JsonSimulationExporter.h"
+#include "solvers/TableSolver.h"
 #include "utils/Logging.h"
 
 IBallisticSolver* createSolver(SolverType type)
 {
     switch (type) {
-    case SolverType::ANALYTICAL:
-        return new AnalyticalSolver();
+        case SolverType::ANALYTICAL:
+            return new AnalyticalSolver();
+        case SolverType::TABLE:
+            return new TableSolver();
     }
 
     ERROR("createSolver: unsupported SolverType = " << static_cast<int>(type));

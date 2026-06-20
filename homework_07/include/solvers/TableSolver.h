@@ -1,0 +1,31 @@
+#pragma once
+
+#include "interfaces/IBallisticSolver.h"
+
+class TableSolver : public IBallisticSolver{
+    Coord solve(
+        const Coord& dronePos,
+        const Coord& targetPos,
+        double altitude,
+        double attackSpeed,
+        double drag,
+        double lift,
+        double mass
+    ) override;
+
+    double calculateAmmoFlightTime(
+        double attackSpeed,
+        double altitude,
+        double drag,
+        double lift,
+        double mass
+    ) override;
+
+    double calculateHorizontalAmmoRange(
+        double attackSpeed,
+        double altitude,
+        double drag,
+        double lift,
+        double mass
+    ) override;
+};

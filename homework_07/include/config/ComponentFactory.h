@@ -7,7 +7,7 @@ class IResultExporter;
 class ITargetProvider;
 class IConfigLoader;
 
-enum class SolverType { ANALYTICAL };
+enum class SolverType { ANALYTICAL, TABLE };
 enum class ProviderType { JSON };
 enum class LoaderType { FILE };
 enum class ExporterType { JSON };
