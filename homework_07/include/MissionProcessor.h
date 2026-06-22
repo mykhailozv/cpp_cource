@@ -1,10 +1,12 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "simulation/DronePhase.h"
 #include "simulation/SimStep.h"
 #include "simulation/StepTimer.h"
+#include "states/IDroneState.h"
 
 struct AmmoParams;
 struct Coord;
@@ -46,6 +48,8 @@ private:
     SimStep* simStep;
     bool inProgress;
 
+    std::unique_ptr<IDroneState> makeStateFromPhase(int phase) const;
+
     double calculateInitVersionTimeToTarget(
         const SimStep* simStep,
         const Coord* targetPos,
@@ -53,13 +57,6 @@ private:
     );
 
     double calculateRotationTime(double dronDir, double neededDir, double dronVelocity);
-    void updateStop();
-    void updateMoving();
-    void updateAccelerating();
-    DronePhase determineMotionPhase(double distance);
-    void stepWithAccelerating();
-    void stepWithDecelerating();
-    void stepRotation(double neededDir);
 
     double calculateAmmoFlightTime();
     double calculateHorizontalAmmoRange();

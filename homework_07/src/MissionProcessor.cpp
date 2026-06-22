@@ -1,4 +1,9 @@
 #include "MissionProcessor.h"
+#include "states/StateStopped.h"
+#include "states/StateMoving.h"
+#include "states/StateAccelerating.h"
+#include "states/StateDecelerating.h"
+#include "states/StateTurning.h"
 #include "simulation/Target.h"
 #include "utils/Logging.h"
 #include "utils/MathUtils.h"
@@ -47,6 +52,18 @@ bool MissionProcessor::init(const IConfigLoader* config)
 bool MissionProcessor::hasNext() const
 {
     return (stepTimer < MAX_STEPS - 1) && inProgress;
+}
+
+std::unique_ptr<IDroneState> MissionProcessor::makeStateFromPhase(int phase) const
+{
+    switch (static_cast<DronePhase>(phase)) {
+        case DronePhase::STOPPED:       return std::make_unique<StateStopped>();
+        case DronePhase::MOVING:        return std::make_unique<StateMoving>();
+        case DronePhase::ACCELERATING:  return std::make_unique<StateAccelerating>();
+        case DronePhase::DECELERATING:  return std::make_unique<StateDecelerating>();
+        case DronePhase::TURNING:       return std::make_unique<StateTurning>();
+    }
+    return std::make_unique<StateStopped>();
 }
 
 Coord MissionProcessor::step()
@@ -99,264 +116,24 @@ Coord MissionProcessor::step()
 
     DEBUG("Target : " << simStep->targetIdx);
     
-    switch (simStep->state)
-    {
-        case MOVING:
-            // You could take the hitRadius into account, but based on testing, the following implementation proved to be better
-            if (distance >= calculateHorizontalAmmoRange() - MathUtils::EPS)
-            {
-                if(MathUtils::needStopForRotation(simStep->direction, neededDir, droneConfig->turnThreshold)){
-                    updateStop();                       
-                } else {
-                    // You could take the hitRadius into account, but based on testing, the following implementation proved to be better
-                    if (distance > calculateHorizontalAmmoRange() + simStep->velocity * droneConfig->simTimeStep)
-                    {
-                        updateMoving();
-                        (simStep + 1)->upDirection(neededDir);
-                    } else {
-                        //dronDir = neededDir;
-                        if (std::fabs(distance - calculateHorizontalAmmoRange()) <= droneConfig->hitRadius - MathUtils::EPS)
-                        {
-                            inProgress = false;
-                        } else {
-                            //inProgress = false;
-                            updateMoving();
-                            (simStep + 1)->upDirection(neededDir);
-                            //ERROR("Check stepToUpdateAmmoDown: ");
-                        }
-                    }
-                }
-            } else {
-                neededDir += M_PI;
+    // Заповнюємо контекст для станів
+    DroneContext ctx;
+    ctx.cfg = droneConfig;
+    ctx.current = simStep;
+    ctx.next = simStep + 1;
+    ctx.distance = distance;
+    ctx.neededDir = neededDir;
+    ctx.ammoRange = calculateHorizontalAmmoRange();
+    ctx.inProgress = &inProgress;
 
-                if(MathUtils::needStopForRotation(simStep->direction, neededDir, droneConfig->turnThreshold)){                        
-                    updateStop();                        
-                } else {
-                    double s_brake = MathUtils::calculateBrakingDistance(simStep->velocity, droneConfig->acceleration);
-                    if (distance + s_brake < calculateHorizontalAmmoRange() - MathUtils::EPS)
-                    {
-                        updateMoving();
-                        (simStep + 1)->upDirection(neededDir);
-                    } else {
-                        updateStop();
-                        (simStep + 1)->upDirection(neededDir);
-                    }                            
-                }
-            }
-            break;
-
-        case ACCELERATING:
-        case DECELERATING:
-
-            if (distance >= calculateHorizontalAmmoRange() + MathUtils::calculateAccelerationPath(simStep->velocity, droneConfig->attackSpeed, droneConfig->acceleration) - MathUtils::EPS){
-                if(MathUtils::needStopForRotation(simStep->direction, neededDir, droneConfig->turnThreshold)){
-                    updateStop();                        
-                } else {
-                    updateAccelerating();
-                    (simStep + 1)->upDirection(neededDir);
-                }
-            } else {
-                neededDir += M_PI;
-                if(MathUtils::needStopForRotation(simStep->direction, neededDir, droneConfig->turnThreshold)){
-                    updateStop();
-                } else {
-                    //dronDir = neededDir;
-                    
-                    DronePhase dronePhase = determineMotionPhase(distance);
-                    
-                    if (dronePhase == ACCELERATING)
-                    {
-                        stepWithAccelerating();
-                        (simStep + 1)->upDirection(neededDir);
-                    } else {
-                        stepWithDecelerating();
-                        (simStep + 1)->upDirection(neededDir);
-                    }
-                }
-            }
-            break;
+    // Створюємо стан на основі simStep->state та виконуємо його
+    // Стан не зберігається між кроками — наступний крок прочитає
+    // свіжий simStep->state з даних (записаний попереднім викликом у simStep+1)
+    auto stateObj = makeStateFromPhase(simStep->state);
+    stateObj->execute(ctx);
     
-        case STOPPED:
-        case TURNING:
-            if (distance >= calculateHorizontalAmmoRange() + droneConfig->accelPath - MathUtils::EPS){
-                
-                if (MathUtils::needStopForRotation(simStep->direction, neededDir, droneConfig->turnThreshold))
-                {
-                    stepRotation(neededDir);
-                } else {
-                    stepWithAccelerating();
-                    (simStep + 1)->upDirection(neededDir);
-                }
-            } else {
-                neededDir += M_PI;
-
-                if (MathUtils::needStopForRotation(simStep->direction, neededDir, droneConfig->turnThreshold))
-                {
-                    stepRotation(neededDir);
-                } else {
-                    stepWithAccelerating();
-                    (simStep + 1)->upDirection(neededDir);
-                }
-            }
-            break;
-
-        default:
-            break;
-    }
-
     stepTimer += 1;
     return simStep->dropPoint;
-}
-
-void MissionProcessor::updateMoving(){
-    *(simStep + 1) = *simStep;
-    // Calculate distance traveled at constant velocity
-    double distance = simStep->velocity * droneConfig->simTimeStep;
-    (simStep + 1)->pos = simStep->pos + simStep->directionVector * distance;
-}
-
-void MissionProcessor::updateAccelerating(){
-    simStep->state = ACCELERATING;
-    *(simStep + 1) = *simStep;
-    double timeToMax = (droneConfig->attackSpeed - simStep->velocity) / droneConfig->acceleration;
-
-    if (droneConfig->simTimeStep <= timeToMax) {
-        double distance = simStep->velocity * droneConfig->simTimeStep + (droneConfig->acceleration * droneConfig->simTimeStep * droneConfig->simTimeStep) / 2.0;
-        (simStep + 1)->pos = simStep->pos + simStep->directionVector * distance;
-
-        (simStep + 1)->velocity = simStep->velocity + droneConfig->acceleration * droneConfig->simTimeStep;
-    } else {
-
-        double distance = simStep->velocity * timeToMax + (droneConfig->acceleration * timeToMax * timeToMax) / 2.0 + droneConfig->attackSpeed * (droneConfig->simTimeStep - timeToMax);
-        (simStep + 1)->pos = simStep->pos + simStep->directionVector * distance;
-
-        (simStep + 1)->velocity = droneConfig->attackSpeed;
-    }
-
-    if ((simStep + 1)->velocity > droneConfig->attackSpeed - MathUtils::EPS)
-    {
-        (simStep + 1)->state = MOVING;
-    }
-    
-}
-
-void MissionProcessor::stepWithAccelerating()
-{
-    simStep->state = ACCELERATING;
-    *(simStep + 1) = *simStep;
-    double timeToMax = (droneConfig->attackSpeed - simStep->velocity) / droneConfig->acceleration;
-    
-    if (droneConfig->simTimeStep <= timeToMax + MathUtils::EPS) {
-        double averageVelocity = simStep->velocity + droneConfig->acceleration * droneConfig->simTimeStep * 0.5;
-        double distance = averageVelocity * droneConfig->simTimeStep;
-        
-        (simStep + 1)->pos = simStep->pos + simStep->directionVector * distance;
-        (simStep + 1)->velocity = simStep->velocity + droneConfig->acceleration * droneConfig->simTimeStep;
-    } else {
-        double accDistance = (simStep->velocity + droneConfig->attackSpeed) * 0.5 * timeToMax;
-        double cruiseDistance = droneConfig->attackSpeed * (droneConfig->simTimeStep - timeToMax);
-        double totalDistance = accDistance + cruiseDistance;
-        
-        (simStep + 1)->pos = simStep->pos + simStep->directionVector * totalDistance;
-        (simStep + 1)->velocity = droneConfig->attackSpeed;
-    }
-
-    if ((simStep + 1)->velocity > droneConfig->attackSpeed - MathUtils::EPS)
-    {
-        (simStep + 1)->velocity = droneConfig->attackSpeed;
-        (simStep + 1)->state = MOVING;
-    }
-
-}
-
-void MissionProcessor::stepWithDecelerating()
-{
-    simStep->state = DECELERATING;
-    *(simStep + 1) = *simStep;
-    double timeToStop = simStep->velocity / droneConfig->acceleration;
-    
-    if (droneConfig->simTimeStep <= timeToStop + MathUtils::EPS) {
-        double averageVelocity = simStep->velocity - droneConfig->acceleration * droneConfig->simTimeStep * 0.5;
-        double distance = averageVelocity * droneConfig->simTimeStep;
-        
-        (simStep + 1)->pos = simStep->pos + simStep->directionVector * distance;
-        (simStep + 1)->velocity = simStep->velocity - droneConfig->acceleration * droneConfig->simTimeStep;
-    } else {
-        double stopDistance = MathUtils::calculateBrakingDistance(simStep->velocity, droneConfig->acceleration);
-        
-        (simStep + 1)->pos = simStep->pos + simStep->directionVector * stopDistance;
-        (simStep + 1)->velocity = 0.0;
-    }
-
-    if ((simStep + 1)->velocity < MathUtils::EPS)
-    {
-        (simStep + 1)->velocity = 0.0;
-        (simStep + 1)->state = STOPPED;
-    }
-}
-
-void MissionProcessor::stepRotation(double neededDir)
-{
-    simStep->state = TURNING;
-    *(simStep + 1) = *simStep;
-
-    double delta = neededDir - simStep->direction;
-    
-    while (delta > M_PI)  delta -= 2.0 * M_PI;
-    while (delta < -M_PI) delta += 2.0 * M_PI;
-    
-    double absDelta = std::fabs(delta);
-    double maxRotation = droneConfig->angularSpeed * droneConfig->simTimeStep;
-    
-    if (absDelta <= maxRotation + MathUtils::EPS) {
-        (simStep + 1)->upDirection(neededDir);
-        (simStep + 1)->state = STOPPED;
-    } else {
-        (simStep + 1)->upDirection(simStep->direction + (delta / absDelta) * maxRotation);
-    }
-    
-    while ((simStep + 1)->direction > M_PI)  (simStep + 1)->direction -= 2.0 * M_PI;
-    while ((simStep + 1)->direction < -M_PI) (simStep + 1)->direction += 2.0 * M_PI;
-}
-
-void MissionProcessor::updateStop(){
-    double dronA = droneConfig->acceleration;
-    double simTimeStep = droneConfig->simTimeStep;
-
-    simStep->state = DECELERATING;
-    double timeToStop = simStep->velocity / dronA;
-    double distance;
-
-    *(simStep + 1) = *simStep;
-
-    if (simTimeStep <= timeToStop) {
-        distance = simStep->velocity * simTimeStep - (dronA * simTimeStep * simTimeStep) / 2.0;
-        (simStep + 1)->velocity = simStep->velocity - dronA * simTimeStep;
-    } else {
-        // Drone stops before simTimeStep ends
-        // Calculate distance to stop: s = v0^2 / (2*a)
-        distance = MathUtils::calculateBrakingDistance(simStep->velocity, dronA);
-        // Velocity becomes 0
-        (simStep + 1)->velocity = 0.0;
-    }
-
-    (simStep + 1)->pos = simStep->pos + simStep->directionVector * distance;
-    
-    if ((simStep + 1)->velocity < MathUtils::EPS)
-    {
-        (simStep + 1)->state = STOPPED;
-    }
-    
-}
-
-bool MissionProcessor::reset()
-{
-    return stepTimer.reset();
-}
-
-void MissionProcessor::changeSolver(IBallisticSolver* newSolver)
-{
-    solver = newSolver;
 }
 
 double MissionProcessor::calculateRotationTime(double dronDir, double neededDir, double dronVelocity){
@@ -456,19 +233,6 @@ double MissionProcessor::calculateInitVersionTimeToTarget(
     return sumTime;
 }
 
-DronePhase MissionProcessor::determineMotionPhase(double distance)
-{
-    double remainingDistance = calculateHorizontalAmmoRange() + droneConfig->accelPath - distance;
-    double stoppingDistance = MathUtils::calculateBrakingDistance(simStep->velocity, droneConfig->acceleration);
-    
-    if (remainingDistance <= stoppingDistance + MathUtils::EPS) {
-        return DECELERATING;
-    }
-
-    return ACCELERATING;
-
-}
-
 double MissionProcessor::calculateAmmoFlightTime(){
     return solver->calculateAmmoFlightTime(droneConfig->attackSpeed, droneConfig->altitude, ammoParams->drag, ammoParams->lift, ammoParams->mass);
 }
@@ -483,7 +247,7 @@ void MissionProcessor::initSimStep(){
     simStep->direction = droneConfig->initialDir;
     simStep->directionVector = {std::cos(droneConfig->initialDir), std::sin(droneConfig->initialDir)};
     simStep->targetIdx = -1;
-    simStep->state = STOPPED;
+    simStep->state = static_cast<int>(DronePhase::STOPPED);
     simStep->velocity = 0.0;
 }
 
