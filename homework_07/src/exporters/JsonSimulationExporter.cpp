@@ -5,6 +5,7 @@
 #include "utils/Logging.h"
 #include "third_party/nlohmann/json.hpp"
 #include "simulation/SimStep.h"
+#include "states/IDroneState.h"
 
 using json = nlohmann::json;
 
@@ -21,7 +22,7 @@ bool JsonSimulationExporter::save(SimStep* simStep, int resultsCount) const{
         json step;
         step["position"]        = {{"x", simStep[i].pos.x}, {"y", simStep[i].pos.y}};
         step["direction"]       = simStep[i].direction;
-        step["state"]           = simStep[i].state;
+        step["state"]           = simStep[i].stateObj ? simStep[i].stateObj->getId() : 0;
         step["targetIndex"]     = simStep[i].targetIdx;
         step["dropPoint"]       = {{"x", simStep[i].dropPoint.x},
                                 {"y", simStep[i].dropPoint.y}};

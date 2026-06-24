@@ -3,7 +3,6 @@
 #include <vector>
 #include <memory>
 
-#include "simulation/DronePhase.h"
 #include "simulation/SimStep.h"
 #include "simulation/StepTimer.h"
 #include "states/IDroneState.h"
@@ -47,8 +46,6 @@ private:
     std::vector<SimStep> steps;
     SimStep* simStep;
     bool inProgress;
-
-    std::unique_ptr<IDroneState> makeStateFromPhase(int phase) const;
 
     double calculateInitVersionTimeToTarget(
         const SimStep* simStep,

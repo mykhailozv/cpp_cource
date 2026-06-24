@@ -1,13 +1,10 @@
 #include "states/StateDecelerating.h"
-#include "states/MakeState.h"
 #include "states/MovementUtils.h"
 #include "utils/MathUtils.h"
 #include <cmath>
 
 std::unique_ptr<IDroneState> StateDecelerating::execute(DroneContext& ctx)
 {
-    ctx.current->state = static_cast<int>(DronePhase::DECELERATING);
-
     if (ctx.distance >= ctx.ammoRange + MathUtils::calculateAccelerationPath(ctx.current->velocity, ctx.attackSpeed(), ctx.acceleration()) - MathUtils::EPS) {
         if (MathUtils::needStopForRotation(ctx.current->direction, ctx.neededDir, ctx.turnThreshold())) {
             MovementUtils::updateStop(ctx);
@@ -33,5 +30,5 @@ std::unique_ptr<IDroneState> StateDecelerating::execute(DroneContext& ctx)
         }
     }
 
-    return makeStateIfChanged(ctx.current->state, ctx.next->state);
+    return nullptr;
 }

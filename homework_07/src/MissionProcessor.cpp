@@ -54,18 +54,6 @@ bool MissionProcessor::hasNext() const
     return (stepTimer < MAX_STEPS - 1) && inProgress;
 }
 
-std::unique_ptr<IDroneState> MissionProcessor::makeStateFromPhase(int phase) const
-{
-    switch (static_cast<DronePhase>(phase)) {
-        case DronePhase::STOPPED:       return std::make_unique<StateStopped>();
-        case DronePhase::MOVING:        return std::make_unique<StateMoving>();
-        case DronePhase::ACCELERATING:  return std::make_unique<StateAccelerating>();
-        case DronePhase::DECELERATING:  return std::make_unique<StateDecelerating>();
-        case DronePhase::TURNING:       return std::make_unique<StateTurning>();
-    }
-    return std::make_unique<StateStopped>();
-}
-
 Coord MissionProcessor::step()
 {
     simStep = &steps[stepTimer.stepIndex];
@@ -126,11 +114,10 @@ Coord MissionProcessor::step()
     ctx.ammoRange = calculateHorizontalAmmoRange();
     ctx.inProgress = &inProgress;
 
-    // Створюємо стан на основі simStep->state та виконуємо його
-    // Стан не зберігається між кроками — наступний крок прочитає
-    // свіжий simStep->state з даних (записаний попереднім викликом у simStep+1)
-    auto stateObj = makeStateFromPhase(simStep->state);
-    stateObj->execute(ctx);
+    // Виконуємо поточний стан (зберігається у simStep->stateObj)
+    if (simStep->stateObj) {
+        simStep->stateObj->execute(ctx);
+    }
     
     stepTimer += 1;
     return simStep->dropPoint;
@@ -169,8 +156,11 @@ double MissionProcessor::calculateInitVersionTimeToTarget(
 
     double neededDirAfterStop = (*targetPos - cDronPos).direction();
 
+    // Отримуємо ID поточного стану (0 = STOPPED, 3 = TURNING)
+    int stateId = simStep->stateObj ? simStep->stateObj->getId() : 0;
+
     // чи достатньо буде відстані якщо зупинитися?
-    if (simStep->state != STOPPED && simStep->state != TURNING)
+    if (stateId != 0 && stateId != 3)
     {
         if (calculateHorizontalAmmoRange() + droneConfig->accelPath <= distanceAfterStop){
             if (!MathUtils::needStopForRotation(simStep->direction, neededDirAfterStop, droneConfig->turnThreshold))
@@ -247,7 +237,7 @@ void MissionProcessor::initSimStep(){
     simStep->direction = droneConfig->initialDir;
     simStep->directionVector = {std::cos(droneConfig->initialDir), std::sin(droneConfig->initialDir)};
     simStep->targetIdx = -1;
-    simStep->state = static_cast<int>(DronePhase::STOPPED);
+    simStep->stateObj = std::make_unique<StateStopped>();
     simStep->velocity = 0.0;
 }
 

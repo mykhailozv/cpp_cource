@@ -1,12 +1,11 @@
 #include "states/StateMoving.h"
-#include "states/MakeState.h"
 #include "states/MovementUtils.h"
 #include "utils/MathUtils.h"
 #include <cmath>
 
 std::unique_ptr<IDroneState> StateMoving::execute(DroneContext& ctx)
 {
-    ctx.current->state = static_cast<int>(DronePhase::MOVING);
+    ctx.current->stateObj = std::make_unique<StateMoving>();
 
     if (ctx.distance >= ctx.ammoRange - MathUtils::EPS) {
         if (MathUtils::needStopForRotation(ctx.current->direction, ctx.neededDir, ctx.turnThreshold())) {
@@ -42,5 +41,5 @@ std::unique_ptr<IDroneState> StateMoving::execute(DroneContext& ctx)
         }
     }
 
-    return makeStateIfChanged(ctx.current->state, ctx.next->state);
+    return nullptr;
 }

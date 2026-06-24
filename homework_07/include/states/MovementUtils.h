@@ -1,7 +1,11 @@
 #pragma once
 
 #include "states/DroneContext.h"
-#include "simulation/DronePhase.h"
+#include "states/StateStopped.h"
+#include "states/StateMoving.h"
+#include "states/StateAccelerating.h"
+#include "states/StateDecelerating.h"
+#include "states/StateTurning.h"
 #include "utils/MathUtils.h"
 #include <cmath>
 
@@ -10,15 +14,17 @@ namespace MovementUtils {
 
 inline void updateMoving(DroneContext& ctx)
 {
-    *ctx.next = *ctx.current;
+    ctx.next->copyFrom(*ctx.current);
+    ctx.next->stateObj = std::make_unique<StateMoving>();
     double distance = ctx.current->velocity * ctx.simTimeStep();
     ctx.next->pos = ctx.current->pos + ctx.current->directionVector * distance;
 }
 
 inline void updateAccelerating(DroneContext& ctx)
 {
-    ctx.current->state = static_cast<int>(DronePhase::ACCELERATING);
-    *ctx.next = *ctx.current;
+    ctx.current->stateObj = std::make_unique<StateAccelerating>();
+    ctx.next->copyFrom(*ctx.current);
+    ctx.next->stateObj = std::make_unique<StateAccelerating>();
     double timeToMax = (ctx.attackSpeed() - ctx.current->velocity) / ctx.acceleration();
 
     if (ctx.simTimeStep() <= timeToMax) {
@@ -35,14 +41,15 @@ inline void updateAccelerating(DroneContext& ctx)
     }
 
     if (ctx.next->velocity > ctx.attackSpeed() - MathUtils::EPS) {
-        ctx.next->state = static_cast<int>(DronePhase::MOVING);
+        ctx.next->stateObj = std::make_unique<StateMoving>();
     }
 }
 
 inline void stepWithAccelerating(DroneContext& ctx)
 {
-    ctx.current->state = static_cast<int>(DronePhase::ACCELERATING);
-    *ctx.next = *ctx.current;
+    ctx.current->stateObj = std::make_unique<StateAccelerating>();
+    ctx.next->copyFrom(*ctx.current);
+    ctx.next->stateObj = std::make_unique<StateAccelerating>();
     double timeToMax = (ctx.attackSpeed() - ctx.current->velocity) / ctx.acceleration();
 
     if (ctx.simTimeStep() <= timeToMax + MathUtils::EPS) {
@@ -60,14 +67,15 @@ inline void stepWithAccelerating(DroneContext& ctx)
 
     if (ctx.next->velocity > ctx.attackSpeed() - MathUtils::EPS) {
         ctx.next->velocity = ctx.attackSpeed();
-        ctx.next->state = static_cast<int>(DronePhase::MOVING);
+        ctx.next->stateObj = std::make_unique<StateMoving>();
     }
 }
 
 inline void stepWithDecelerating(DroneContext& ctx)
 {
-    ctx.current->state = static_cast<int>(DronePhase::DECELERATING);
-    *ctx.next = *ctx.current;
+    ctx.current->stateObj = std::make_unique<StateDecelerating>();
+    ctx.next->copyFrom(*ctx.current);
+    ctx.next->stateObj = std::make_unique<StateDecelerating>();
     double timeToStop = ctx.current->velocity / ctx.acceleration();
 
     if (ctx.simTimeStep() <= timeToStop + MathUtils::EPS) {
@@ -83,14 +91,15 @@ inline void stepWithDecelerating(DroneContext& ctx)
 
     if (ctx.next->velocity < MathUtils::EPS) {
         ctx.next->velocity = 0.0;
-        ctx.next->state = static_cast<int>(DronePhase::STOPPED);
+        ctx.next->stateObj = std::make_unique<StateStopped>();
     }
 }
 
 inline void stepRotation(double neededDir, DroneContext& ctx)
 {
-    ctx.current->state = static_cast<int>(DronePhase::TURNING);
-    *ctx.next = *ctx.current;
+    ctx.current->stateObj = std::make_unique<StateTurning>();
+    ctx.next->copyFrom(*ctx.current);
+    ctx.next->stateObj = std::make_unique<StateTurning>();
 
     double delta = neededDir - ctx.current->direction;
     while (delta > M_PI)  delta -= 2.0 * M_PI;
@@ -101,7 +110,7 @@ inline void stepRotation(double neededDir, DroneContext& ctx)
 
     if (absDelta <= maxRotation + MathUtils::EPS) {
         ctx.next->upDirection(neededDir);
-        ctx.next->state = static_cast<int>(DronePhase::STOPPED);
+        ctx.next->stateObj = std::make_unique<StateStopped>();
     } else {
         ctx.next->upDirection(ctx.current->direction + (delta / absDelta) * maxRotation);
     }
@@ -115,11 +124,12 @@ inline void updateStop(DroneContext& ctx)
     double dronA = ctx.acceleration();
     double simTimeStep = ctx.simTimeStep();
 
-    ctx.current->state = static_cast<int>(DronePhase::DECELERATING);
     double timeToStop = ctx.current->velocity / dronA;
     double distance;
 
-    *ctx.next = *ctx.current;
+    ctx.current->stateObj = std::make_unique<StateDecelerating>();
+    ctx.next->copyFrom(*ctx.current);
+    ctx.next->stateObj = std::make_unique<StateDecelerating>();
 
     if (simTimeStep <= timeToStop) {
         distance = ctx.current->velocity * simTimeStep - (dronA * simTimeStep * simTimeStep) / 2.0;
@@ -132,7 +142,7 @@ inline void updateStop(DroneContext& ctx)
     ctx.next->pos = ctx.current->pos + ctx.current->directionVector * distance;
 
     if (ctx.next->velocity < MathUtils::EPS) {
-        ctx.next->state = static_cast<int>(DronePhase::STOPPED);
+        ctx.next->stateObj = std::make_unique<StateStopped>();
     }
 }
 
