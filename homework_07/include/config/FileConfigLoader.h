@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -16,14 +17,14 @@ public:
 
     const AmmoParams* getAmmoParams() const override;
 
-    virtual ~FileConfigLoader();
+    ~FileConfigLoader() override;
 
 private:
     bool readAmmoInfo();
     bool readConfig();
     bool setAmmoName(const std::string& ammoName);
 
-    DroneConfig* droneConfig;
+    std::unique_ptr<DroneConfig> droneConfig;
 
     std::unordered_map<std::string, AmmoParams> ammoParamsMap;
     std::string ammoPath;

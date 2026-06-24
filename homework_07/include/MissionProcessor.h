@@ -18,9 +18,9 @@ class ITargetProvider;
 class MissionProcessor {
 public:
     MissionProcessor(
-        IBallisticSolver* solver,
-        ITargetProvider* targets,
-        IResultExporter* exporter
+        std::unique_ptr<IBallisticSolver> solver,
+        std::unique_ptr<ITargetProvider> targets,
+        std::unique_ptr<IResultExporter> exporter
     );
 
     bool init(const IConfigLoader* config);
@@ -33,9 +33,9 @@ public:
     ~MissionProcessor();
     
 private:
-    IBallisticSolver* solver;
-    ITargetProvider* targets;
-    IResultExporter* exporter;
+    std::unique_ptr<IBallisticSolver> solver;
+    std::unique_ptr<ITargetProvider> targets;
+    std::unique_ptr<IResultExporter> exporter;
     const IConfigLoader* configLoader;
 
     const DroneConfig* droneConfig;

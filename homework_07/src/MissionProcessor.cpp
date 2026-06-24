@@ -23,13 +23,13 @@ using json = nlohmann::json;
 constexpr int MAX_STEPS = 10000;
 
 MissionProcessor::MissionProcessor(
-    IBallisticSolver* solver,
-    ITargetProvider* targets,
-    IResultExporter* exporter
+    std::unique_ptr<IBallisticSolver> solver,
+    std::unique_ptr<ITargetProvider> targets,
+    std::unique_ptr<IResultExporter> exporter
 )
-    : solver(solver)
-    , targets(targets)
-    , exporter(exporter)
+    : solver(std::move(solver))
+    , targets(std::move(targets))
+    , exporter(std::move(exporter))
     , currentIndex(0)
 {
 }
