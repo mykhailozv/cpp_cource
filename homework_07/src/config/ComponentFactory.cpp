@@ -37,6 +37,8 @@ IConfigLoader* createLoader(LoaderType type, const std::string& path)
     switch (type) {
         case LoaderType::FILE:
             return new FileConfigLoader(path + "ammo.json", path + "config.json");
+        case LoaderType::FILE_09:
+            return new FileConfigLoader(path + "ammo_09.json", path + "config.json");
     }
 
     ERROR("createLoader: unsupported LoaderType = " << static_cast<int>(type));

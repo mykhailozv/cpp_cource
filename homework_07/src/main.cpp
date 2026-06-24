@@ -32,7 +32,7 @@ int main(int argc, char** argv)
         return 1;    
     }
 
-    IConfigLoader* config = createLoader(LoaderType::FILE, path);
+    IConfigLoader* config = createLoader(LoaderType::FILE_09, path);
 
     if (!config) {
         return 1;    

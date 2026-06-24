@@ -9,7 +9,7 @@ class IConfigLoader;
 
 enum class SolverType { ANALYTICAL, TABLE };
 enum class ProviderType { JSON };
-enum class LoaderType { FILE };
+enum class LoaderType { FILE, FILE_09 };
 enum class ExporterType { JSON };
 
 IBallisticSolver* createSolver(SolverType type);
