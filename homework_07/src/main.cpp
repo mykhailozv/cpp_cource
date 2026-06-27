@@ -9,6 +9,7 @@
 #include "interfaces/IResultExporter.h"
 #include "interfaces/ITargetProvider.h"
 #include "interfaces/IConfigLoader.h"
+#include "solvers/TableSolver.h"
 
 //#include "SimpleSimulator.h"
 
@@ -24,7 +25,7 @@ int main(int argc, char** argv)
         LOG("data folder: " << path);
     }
 
-    auto solver = createSolver(SolverType::ANALYTICAL);
+    auto solver = createSolver(SolverType::TABLE, path);
 
     if (!solver) {
         return 1;    
@@ -36,7 +37,7 @@ int main(int argc, char** argv)
         return 1;    
     }
 
-    auto config = createLoader(LoaderType::FILE, path);
+    auto config = createLoader(LoaderType::FILE_09, path);
 
     if (!config) {
         return 1;    

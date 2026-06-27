@@ -1,83 +1,44 @@
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <vector>
 
 #include "ballistic/BallisticTable.h"
 
 
-struct GridPoint
+// Допоміжна функція: лінійна інтерполяція для Result
+static BallisticTable::Result lerp(
+    const BallisticTable::Result& a,
+    const BallisticTable::Result& b,
+    float t)
 {
-    int iz, iv, im, id, il;
-    double tz, tv, tm, td, tl;
+    return {
+        a.t     + (b.t     - a.t)     * t,
+        a.hDist + (b.hDist - a.hDist) * t
+    };
+}
+
+// Індекс і коефіцієнт для одного виміру
+struct Interp {
+    int lo;      // нижній індекс в осі
+    float frac;  // коефіцієнт [0..1]
 };
 
-std::pair<int,double> findInterval(const std::vector<float>& axis,
-             double value)
+static Interp findInterp(float val, const std::vector<float>& axis)
 {
-    auto upper =
-        std::upper_bound(axis.begin(), axis.end(), value);
+    if (axis.empty()) return {0, 0.0f};
+    if (val <= axis.front()) return {0, 0.0f};
+    if (val >= axis.back())
+        return {static_cast<int>(axis.size()) - 2, 1.0f};
 
-    int i =
-        static_cast<int>(upper - axis.begin()) - 1;
+    auto it = std::lower_bound(axis.begin(), axis.end(), val);
+    int i = static_cast<int>(it - axis.begin()) - 1;
+    if (i < 0) i = 0;
 
-    i = std::clamp(i, 0, static_cast<int>(axis.size()) - 2);
-
-    double t = (value - axis[i]) / (axis[i+1] - axis[i]);
-
-    return {i,t};
+    float frac = (val - axis[i]) / (axis[i+1] - axis[i]);
+    return {i, frac};
 }
 
-std::pair<double,double> interpolate(
-    const GridPoint& p,
-    const BallisticTable& table)
-{
-    std::pair<double,double> result{0.0,0.0};
-
-    for (int bz=0;bz<2;bz++)
-    for (int bv=0;bv<2;bv++)
-    for (int bm=0;bm<2;bm++)
-    for (int bd=0;bd<2;bd++)
-    for (int bl=0;bl<2;bl++)
-    {
-        double weight =
-            (bz ? p.tz : 1.0 - p.tz) *
-            (bv ? p.tv : 1.0 - p.tv) *
-            (bm ? p.tm : 1.0 - p.tm) *
-            (bd ? p.td : 1.0 - p.td) *
-            (bl ? p.tl : 1.0 - p.tl);
-
-        const auto& node =
-            table.at(
-                p.iz + bz,
-                p.iv + bv,
-                p.im + bm,
-                p.id + bd,
-                p.il + bl);
-
-        result.first  += node.t      * weight;
-        result.second += node.hDist * weight;
-    }
-
-    return result;
-}
-
-std::pair<double,double> solve(
-    const BallisticTable& table,
-    double z, double v, double m, double d, double l)
-{
-    auto [iz,tz] = findInterval(table.axisZ0, z);
-    auto [iv,tv] = findInterval(table.axisV0, v);
-    auto [im,tm] = findInterval(table.axisM, m);
-    auto [id,td] = findInterval(table.axisD, d);
-    auto [il,tl] = findInterval(table.axisL, l);
-
-    GridPoint p{
-        iz,iv,im,id,il,
-        tz,tv,tm,td,tl
-    };
-
-    return interpolate(p, table);
-}
 
 // Індекс у плоскому масиві: [iZ0][iV0][iM][iD][iL]
 size_t BallisticTable::index(int iz, int iv, int im, int id, int il) const {
@@ -90,6 +51,57 @@ size_t BallisticTable::index(int iz, int iv, int im, int id, int il) const {
 const BallisticTable::Result& BallisticTable::at(int iz, int iv, int im,
                     int id, int il) const {
     return data[index(iz, iv, im, id, il)];
+}
+
+BallisticTable::Result BallisticTable::lookup(
+    float Z0, float V0, float m,
+    float d,  float l) const
+{
+    Interp iz = findInterp(Z0, axisZ0);
+    Interp iv = findInterp(V0, axisV0);
+    Interp im = findInterp(m,  axisM);
+    Interp id = findInterp(d,  axisD);
+    Interp il = findInterp(l,  axisL);
+
+    // 2^5 = 32 вершини гіперкуба
+    // Згортаємо: 32 → 16 → 8 → 4 → 2 → 1 (вкладені lerp)
+
+    // l: 32 → 16
+    Result v[16];
+    for (int a = 0; a < 2; a++)
+     for (int b = 0; b < 2; b++)
+      for (int c = 0; c < 2; c++)
+       for (int e = 0; e < 2; e++) {
+           auto& lo = at(iz.lo+a, iv.lo+b,
+                         im.lo+c, id.lo+e, il.lo);
+           auto& hi = at(iz.lo+a, iv.lo+b,
+                         im.lo+c, id.lo+e, il.lo+1);
+           v[a*8+b*4+c*2+e] = lerp(lo, hi, il.frac);
+       }
+
+    // d: 16 → 8
+    Result w[8];
+    for (int a = 0; a < 2; a++)
+     for (int b = 0; b < 2; b++)
+      for (int c = 0; c < 2; c++)
+       w[a*4+b*2+c] = lerp(v[a*8+b*4+c*2],
+                            v[a*8+b*4+c*2+1],
+                            id.frac);
+
+    // m: 8 → 4
+    Result u[4];
+    for (int a = 0; a < 2; a++)
+     for (int b = 0; b < 2; b++)
+      u[a*2+b] = lerp(w[a*4+b*2],
+                       w[a*4+b*2+1], im.frac);
+
+    // V0: 4 → 2
+    Result s[2];
+    for (int a = 0; a < 2; a++)
+        s[a] = lerp(u[a*2], u[a*2+1], iv.frac);
+
+    // Z0: 2 → 1
+    return lerp(s[0], s[1], iz.frac);
 }
 
 bool BallisticTable::load(const char* path) {

@@ -23,8 +23,10 @@ struct BallisticTable{
     size_t index(int iz, int iv, int im, int id, int il) const;
  
     const Result& at(int iz, int iv, int im, int id, int il) const;
+
+    // 5-вимірна лінійна інтерполяція (вкладені lerp)
+    Result lookup(float Z0, float V0, float m, float d, float l) const;
  
     // Завантаження з текстового файлу
     bool load(const char* path);
-
 };

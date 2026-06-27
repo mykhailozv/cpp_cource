@@ -6,13 +6,13 @@
 #include "solvers/TableSolver.h"
 #include "utils/Logging.h"
 
-std::unique_ptr<IBallisticSolver> createSolver(SolverType type)
+std::unique_ptr<IBallisticSolver> createSolver(SolverType type, const std::string& path)
 {
     switch (type) {
         case SolverType::ANALYTICAL:
             return std::make_unique<AnalyticalSolver>();
         case SolverType::TABLE:
-            return std::make_unique<TableSolver>();
+            return std::make_unique<TableSolver>(path + "../ballistic_table.txt");
     }
 
     ERROR("createSolver: unsupported SolverType = " << static_cast<int>(type));
