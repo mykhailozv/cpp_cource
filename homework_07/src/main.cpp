@@ -1,10 +1,10 @@
-#include <iostream>
-
+#include "geometry/Coord.h"
 #include "MissionProcessor.h"
 #include "config/ComponentFactory.h"
-#include "Types.h"
-#include "interfaces/IResultExporter.h"
 #include "utils/Logging.h"
+
+#include "interfaces/ITargetProvider.h" // from targetProvider->init()
+#include "interfaces/IConfigLoader.h" // from config->load()
 
 //#include "SimpleSimulator.h"
 
@@ -17,15 +17,32 @@ int main(int argc, char** argv)
 
     if (argc > 1) {
         path = argv[1];
-        std::cout << "data folder: " << path << "\n\n";
+        LOG("data folder: " << path);
     }
 
-    std::cout << "[LOG] SimpleSimulator::run() - starting mission..." << std::endl;
-
     IBallisticSolver* solver = createSolver(SolverType::ANALYTICAL);
+
+    if (!solver) {
+        return 1;    
+    }
+
     ITargetProvider* targetProvider = createProvider(ProviderType::JSON, path);
+
+    if (!targetProvider) {
+        return 1;    
+    }
+
     IConfigLoader* config = createLoader(LoaderType::FILE, path);
+
+    if (!config) {
+        return 1;    
+    }
+
     IResultExporter* exporter = createExporter(ExporterType::JSON, path);
+
+    if (!exporter) {
+        return 1;    
+    }
     
     if (!targetProvider->init()) {
         return 1;

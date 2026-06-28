@@ -2,10 +2,10 @@
 
 #include <string>
 
-#include "interfaces/IBallisticSolver.h"
-#include "interfaces/IResultExporter.h"
-#include "interfaces/ITargetProvider.h"
-#include "interfaces/IConfigLoader.h"
+class IBallisticSolver;
+class IResultExporter;
+class ITargetProvider;
+class IConfigLoader;
 
 enum class SolverType { ANALYTICAL };
 enum class ProviderType { JSON };

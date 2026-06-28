@@ -2,8 +2,8 @@
 #include <iostream>
 
 #include "third_party/nlohmann/json.hpp"
+#include "simulation/Target.h"
 #include "providers/JsonTargetProvider.h"
-#include "Types.h"
 #include "utils/Logging.h"
 
 using json = nlohmann::json;
@@ -64,7 +64,7 @@ bool JsonTargetProvider::readTargetsCoord(const std::string& path){
 
     timeSteps = data["timeSteps"];
 
-    targetList = new Target[targetCount];
+    targetList.resize(targetCount);
 
     try {
         for (int i = 0; i < targetCount; i++) {
@@ -85,7 +85,6 @@ bool JsonTargetProvider::readTargetsCoord(const std::string& path){
 }
 
 JsonTargetProvider::~JsonTargetProvider(){
-    delete [] targetList;
 }
 
 int JsonTargetProvider::getSimCycleStep(){

@@ -1,12 +1,17 @@
 #include "MissionProcessor.h"
-#include "Types.h"
+#include "simulation/Target.h"
 #include "utils/Logging.h"
 #include "utils/MathUtils.h"
 #include <cmath>
 #include <cstdio>
-#include <limits>
 #include "third_party/nlohmann/json.hpp"
-#include <iostream>
+#include "interfaces/IBallisticSolver.h"
+#include "interfaces/ITargetProvider.h"
+#include "interfaces/IConfigLoader.h"
+#include "interfaces/IResultExporter.h"
+#include "config/DroneConfig.h"
+#include "config/AmmoParams.h"
+
 
 using json = nlohmann::json;
 
@@ -31,8 +36,8 @@ bool MissionProcessor::init(const IConfigLoader* config)
     ammoParams = config->getAmmoParams();
     
     stepTimer.init(*droneConfig, targets->getSimCycleStep());
-    steps = new SimStep[MAX_STEPS];
-    simStep = &steps[0];
+    steps.resize(MAX_STEPS);
+    simStep = steps.data();
     initSimStep();
     inProgress = true;
     
@@ -483,9 +488,8 @@ void MissionProcessor::initSimStep(){
 }
 
 MissionProcessor::~MissionProcessor(){
-    delete [] steps;
 }
 
 bool MissionProcessor::saveData(){
-    return exporter->save(steps, stepTimer.stepIndex);
+    return exporter->save(steps.data(), stepTimer.stepIndex);
 }

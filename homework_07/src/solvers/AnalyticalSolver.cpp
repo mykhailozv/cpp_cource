@@ -1,8 +1,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "geometry/Coord.h"
 #include "solvers/AnalyticalSolver.h"
-#include "Types.h"
 #include "utils/Logging.h"
 #include "utils/MathUtils.h"
 
@@ -10,19 +10,16 @@ Coord AnalyticalSolver::solve(
     const Coord& dronePos,
     const Coord& targetPos,
     double altitude,
-    double ammoSpeed,
+    double attackSpeed,
     double drag,
-    double lift
-)
-{
-    // TODO: implement analytical solution
-    (void)dronePos;
-    (void)targetPos;
-    (void)altitude;
-    (void)ammoSpeed;
-    (void)drag;
-    (void)lift;
-    return Coord{0.0, 0.0};
+    double lift,
+    double mass
+) {
+    double horizontalAmmoRange = calculateHorizontalAmmoRange(attackSpeed, altitude, drag, lift, mass);
+    double direction = (dronePos - targetPos).direction();
+    Coord directionVector = {std::cos(direction), std::sin(direction)};
+    Coord dropPoint = targetPos + directionVector * horizontalAmmoRange;
+    return dropPoint;
 }
 
 double AnalyticalSolver::calculateAmmoFlightTime(

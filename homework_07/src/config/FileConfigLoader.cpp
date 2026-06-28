@@ -3,8 +3,9 @@
 
 #include "third_party/nlohmann/json.hpp"
 
+#include "config/AmmoParams.h"
+#include "config/DroneConfig.h"
 #include "config/FileConfigLoader.h"
-#include "Types.h"
 #include "utils/Logging.h"
 #include "utils/MathUtils.h"
 
@@ -13,7 +14,7 @@ using json = nlohmann::json;
 constexpr double EPS = 0.001;
 
 FileConfigLoader::FileConfigLoader(const std::string& ammoPath, const std::string& configPath)
-    :ammoPath(ammoPath), configPath(configPath)
+    :ammoPath(ammoPath), configPath(configPath), cacheValid(false)
 {
     // TODO: implement
 }
@@ -36,18 +37,17 @@ const DroneConfig* FileConfigLoader::getConfig() const
 
 const AmmoParams* FileConfigLoader::getAmmoParams() const
 {
-    if (size > 0 && index >= 0 && index < size) {
-        return &ammoParamsList[index];
+    if (cacheValid) {
+        return &cachedAmmo->second;
     }
 
-    ERROR("ammoParamsList is not initialized");
+    ERROR("Ammo cache is not initialized");
     static AmmoParams dummy{};
     return &dummy;
 }
 
 FileConfigLoader::~FileConfigLoader()
 {
-    delete[] ammoParamsList;
     delete droneConfig;
 }
 
@@ -80,21 +80,17 @@ bool FileConfigLoader::readAmmoInfo(){
         return false;
     }
 
-    delete[] ammoParamsList;    
-    
-    ammoParamsList = new AmmoParams[dataSize];
-
-    
     try {
-        for (int i = 0; i < dataSize; i++) {
-            ammoParamsList[i] = data[i];
+        std::vector<AmmoParams> ammoParamsList = data.get<std::vector<AmmoParams>>();
+        ammoParamsMap.clear();
+        for (const auto& ammo : ammoParamsList)
+        {
+            ammoParamsMap.emplace(ammo.name, ammo);
         }
     } catch (const json::exception& e) {
         ERROR("Ammo parsing error: " << e.what());
         return false;
     }
-
-    size = dataSize;
 
     return true;
     
@@ -223,22 +219,20 @@ bool FileConfigLoader::readConfig(){
 
 bool FileConfigLoader::setAmmoName(const std::string& ammoName){
     
-    if (ammoParamsList == nullptr) {
-        ERROR("ammoParamsList is not initialized");
+    if (ammoParamsMap.empty()) {
+        ERROR("ammoParamsMap is not initialized");
         return false;
     }
 
-    for (int i = 0; i < size; i++)
-    {
-        if (ammoName == ammoParamsList[i].name)
-        {
-            index = i;
-            return true;
-        }
-        
+    auto it = ammoParamsMap.find(ammoName);
+    if (it == ammoParamsMap.end()){
+        ERROR("Unknown ammoName: " << ammoName);
+        return false;
     }
 
-    ERROR("Unknown ammoName: " << ammoName);
+    cachedAmmo = it;
+    cacheValid = true;
     
-    return false;
+    return true;
+    
 }

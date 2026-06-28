@@ -1,13 +1,18 @@
 #pragma once
 
-#include "Types.h"
-#include "interfaces/IBallisticSolver.h"
-#include "interfaces/ITargetProvider.h"
-#include "interfaces/IConfigLoader.h"
-#include "interfaces/IResultExporter.h"
+#include <vector>
 
+#include "simulation/DronePhase.h"
+#include "simulation/SimStep.h"
+#include "simulation/StepTimer.h"
+
+struct AmmoParams;
 struct Coord;
 struct DroneConfig;
+class IBallisticSolver;
+class IConfigLoader;
+class IResultExporter;
+class ITargetProvider;
 
 class MissionProcessor {
 public:
@@ -37,7 +42,7 @@ private:
     int currentIndex;
 
     StepTimer stepTimer;
-    SimStep* steps;
+    std::vector<SimStep> steps;
     SimStep* simStep;
     bool inProgress;
 
