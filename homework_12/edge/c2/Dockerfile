@@ -22,11 +22,11 @@ WORKDIR /src
 COPY . .
 
 # Заповнити команду CMake-збирання.
-RUN _____
+RUN cmake -B build -S . && cmake --build build -j$(nproc)
 
 # Етап 2: запуск
 # Для простоти ДЗ той самий MAVSDK .deb встановлюється i в образ запуску.
-FROM _____
+FROM ubuntu:22.04
 
 ARG MAVSDK_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
