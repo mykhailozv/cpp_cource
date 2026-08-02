@@ -17,9 +17,16 @@ add_library(mission_core
     src/MissionProcessor.cpp
     src/utils/MathUtils.cpp
     src/solvers/AnalyticalSolver.cpp
+    src/solvers/TableSolver.cpp
+    src/ballistic/BallisticTable.cpp
     src/providers/JsonTargetProvider.cpp
     src/config/FileConfigLoader.cpp
     src/config/ComponentFactory.cpp
+    src/states/StateStopped.cpp
+    src/states/StateMoving.cpp
+    src/states/StateAccelerating.cpp
+    src/states/StateDecelerating.cpp
+    src/states/StateTurning.cpp
 )
 
 target_include_directories(mission_core PUBLIC

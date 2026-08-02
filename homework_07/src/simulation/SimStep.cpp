@@ -9,3 +9,16 @@ void SimStep::upDirection(double newDirection){
     direction = newDirection;
     directionVector = {std::cos(direction), std::sin(direction)};
 }
+
+void SimStep::copyFrom(const SimStep& other)
+{
+    pos = other.pos;
+    direction = other.direction;
+    directionVector = other.directionVector;
+    // stateObj не копіюємо — буде встановлено окремо
+    targetIdx = other.targetIdx;
+    velocity = other.velocity;
+    dropPoint = other.dropPoint;
+    aimPoint = other.aimPoint;
+    predictedTarget = other.predictedTarget;
+}

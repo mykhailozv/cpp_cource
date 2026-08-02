@@ -14,7 +14,7 @@ using json = nlohmann::json;
 constexpr double EPS = 0.001;
 
 FileConfigLoader::FileConfigLoader(const std::string& ammoPath, const std::string& configPath)
-    :ammoPath(ammoPath), configPath(configPath), cacheValid(false)
+    :ammoPath(ammoPath), configPath(configPath), droneConfig(nullptr), cacheValid(false)
 {
     // TODO: implement
 }
@@ -32,7 +32,7 @@ bool FileConfigLoader::load()
 
 const DroneConfig* FileConfigLoader::getConfig() const
 {
-    return droneConfig;
+    return droneConfig.get();
 }
 
 const AmmoParams* FileConfigLoader::getAmmoParams() const
@@ -46,11 +46,7 @@ const AmmoParams* FileConfigLoader::getAmmoParams() const
     return &dummy;
 }
 
-FileConfigLoader::~FileConfigLoader()
-{
-    delete droneConfig;
-}
-
+FileConfigLoader::~FileConfigLoader() = default;
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Coord, x, y)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AmmoParams, name, mass, drag, lift)
@@ -105,8 +101,7 @@ bool FileConfigLoader::readConfig(){
         return false;
     }
     
-    delete droneConfig;
-    droneConfig = new DroneConfig();
+    droneConfig = std::make_unique<DroneConfig>();
 
     json data;
 

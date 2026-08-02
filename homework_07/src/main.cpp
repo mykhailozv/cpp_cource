@@ -1,10 +1,15 @@
+#include <memory>
+
 #include "geometry/Coord.h"
 #include "MissionProcessor.h"
 #include "config/ComponentFactory.h"
 #include "utils/Logging.h"
 
-#include "interfaces/ITargetProvider.h" // from targetProvider->init()
-#include "interfaces/IConfigLoader.h" // from config->load()
+#include "interfaces/IBallisticSolver.h"
+#include "interfaces/IResultExporter.h"
+#include "interfaces/ITargetProvider.h"
+#include "interfaces/IConfigLoader.h"
+#include "solvers/TableSolver.h"
 
 //#include "SimpleSimulator.h"
 
@@ -20,25 +25,25 @@ int main(int argc, char** argv)
         LOG("data folder: " << path);
     }
 
-    IBallisticSolver* solver = createSolver(SolverType::ANALYTICAL);
+    auto solver = createSolver(SolverType::TABLE, path);
 
     if (!solver) {
         return 1;    
     }
 
-    ITargetProvider* targetProvider = createProvider(ProviderType::JSON, path);
+    auto targetProvider = createProvider(ProviderType::JSON, path);
 
     if (!targetProvider) {
         return 1;    
     }
 
-    IConfigLoader* config = createLoader(LoaderType::FILE, path);
+    auto config = createLoader(LoaderType::FILE_09, path);
 
     if (!config) {
         return 1;    
     }
 
-    IResultExporter* exporter = createExporter(ExporterType::JSON, path);
+    auto exporter = createExporter(ExporterType::JSON, path);
 
     if (!exporter) {
         return 1;    
@@ -52,10 +57,13 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    MissionProcessor* processor;
-
-    processor = new MissionProcessor(solver, targetProvider, exporter);
-    if (!processor->init(config)) {
+    auto processor = std::make_unique<MissionProcessor>(
+        std::move(solver),
+        std::move(targetProvider),
+        std::move(exporter)
+    );
+    
+    if (!processor->init(config.get())) {
         return 1;
     }
 
@@ -69,12 +77,6 @@ int main(int argc, char** argv)
     }
 
     LOG("Complete Simulation");
-    
-    delete processor;
-    delete exporter;
-    delete solver;
-    delete targetProvider;
-    delete config;
 
     return 0;
 }

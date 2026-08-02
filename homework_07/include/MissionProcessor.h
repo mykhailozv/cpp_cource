@@ -1,10 +1,11 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
-#include "simulation/DronePhase.h"
 #include "simulation/SimStep.h"
 #include "simulation/StepTimer.h"
+#include "states/IDroneState.h"
 
 struct AmmoParams;
 struct Coord;
@@ -17,9 +18,9 @@ class ITargetProvider;
 class MissionProcessor {
 public:
     MissionProcessor(
-        IBallisticSolver* solver,
-        ITargetProvider* targets,
-        IResultExporter* exporter
+        std::unique_ptr<IBallisticSolver> solver,
+        std::unique_ptr<ITargetProvider> targets,
+        std::unique_ptr<IResultExporter> exporter
     );
 
     bool init(const IConfigLoader* config);
@@ -32,9 +33,9 @@ public:
     ~MissionProcessor();
     
 private:
-    IBallisticSolver* solver;
-    ITargetProvider* targets;
-    IResultExporter* exporter;
+    std::unique_ptr<IBallisticSolver> solver;
+    std::unique_ptr<ITargetProvider> targets;
+    std::unique_ptr<IResultExporter> exporter;
     const IConfigLoader* configLoader;
 
     const DroneConfig* droneConfig;
@@ -53,13 +54,6 @@ private:
     );
 
     double calculateRotationTime(double dronDir, double neededDir, double dronVelocity);
-    void updateStop();
-    void updateMoving();
-    void updateAccelerating();
-    DronePhase determineMotionPhase(double distance);
-    void stepWithAccelerating();
-    void stepWithDecelerating();
-    void stepRotation(double neededDir);
 
     double calculateAmmoFlightTime();
     double calculateHorizontalAmmoRange();
