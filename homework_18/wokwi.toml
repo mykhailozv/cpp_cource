@@ -1,0 +1,9 @@
+[wokwi]
+version = 1
+firmware = "../build/homework_18.bin"
+elf = "../build/homework_18.elf"
+
+[esp32s3]
+flashMode = "dio"
+flashSize = "4MB"
+
