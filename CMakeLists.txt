@@ -23,5 +23,9 @@ add_subdirectory(homework_06)
 add_subdirectory(homework_07)
 add_subdirectory(homework_16)
 
+# Домашня робота 13: unit-тести антидронової турелі (pure C++, без ROS).
+# Збирається через загальний googletest (див. homework_06).
+add_subdirectory(homework_13)
+
 # Demo-код для заняття 2.4: локальне і віддалене відлагодження через GDB.
 add_subdirectory(demos/lesson_2_4/debug_probe)
