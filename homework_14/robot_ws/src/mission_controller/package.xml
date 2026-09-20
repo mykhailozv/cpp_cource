@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>mission_controller</name>
+  <version>0.1.0</version>
+  <description>Рішення для ДЗ 14: mission_explorer (нода дослідження/рішення) та payload_action (нода симуляції дії з контактом).</description>
+
+  <maintainer email="student@example.com">student</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rosidl_typesupport_cpp</depend>
+  <depend>underground_world</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
