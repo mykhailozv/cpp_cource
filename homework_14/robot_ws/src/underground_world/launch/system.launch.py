@@ -30,7 +30,25 @@ def generate_launch_description():
         ],
     )
 
-    # Тут можна додати керуючі ноди або інший launch-файл з рішенням.
+    # --- Ноди рішення (ДЗ 14) ---
+    # payload_action: надає /payload/trigger і публікує /payload/enemy_down.
+    payload_action_node = Node(
+        package="mission_controller",
+        executable="payload_action_node",
+        name="payload_action_node",
+        output="screen",
+    )
+
+    # mission_explorer: читає /robot/local_scan та /robot/result, будує пам'ять
+    # карти, обирає рухи, публікує /robot/cmd_move і /student/status, викликає
+    # /payload/trigger.
+    mission_explorer_node = Node(
+        package="mission_controller",
+        executable="mission_explorer_node",
+        name="mission_explorer_node",
+        output="screen",
+    )
+
     return LaunchDescription(
         [
             DeclareLaunchArgument(
@@ -44,5 +62,7 @@ def generate_launch_description():
                 description="Delay before applying queued move commands",
             ),
             world_node,
+            payload_action_node,
+            mission_explorer_node,
         ]
     )
